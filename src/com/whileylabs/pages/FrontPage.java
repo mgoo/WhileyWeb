@@ -34,42 +34,45 @@ public class FrontPage extends HttpMethodDispatchHandler {
 			ByteArrayOutputStream ous = new ByteArrayOutputStream();
 			PrintWriter writer = new PrintWriter(ous);
 			writePage(writer);
-			writer.flush();			
+			writer.flush();
 			response.setStatusCode(HttpStatus.SC_OK);
 			response.setEntity(new ByteArrayEntity(ous.toByteArray(), ContentType.TEXT_HTML));
 		} catch(URISyntaxException e) {
 			throw new HttpException("Invalid URI",e);
 		}
 	}
-	
+
 	private void writePage(PrintWriter writer) {
 		writer.println("<!DOCTYPE html>");
 		writer.println("<html xmlns=\"http://www.w3.org/1999/xhtml\" dir=\"ltr\" lang=\"en-US\">");
 		writeHeader(writer);
-		writeBody(writer);		
+		writeBody(writer);
 		writer.println("</html>");
 	}
-	
+
 	public void writeHeader(PrintWriter writer) {
 		writer.println("<head>");
 		writer.println("<title>Whiley Labs</title>");
-		writer.println("<link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\">");		
+		writer.println("<link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\">");
 	    writer.println("<script type=\"text/javascript\" src=\"js/jquery.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/jquery-ui.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/ace.js\" charset=\"utf-8\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/mode-whiley.js\"></script>");
 		writer.println("<script type=\"text/javascript\">var root_url = \"\"</script>");
-	    writer.println("<script type=\"text/javascript\" src=\"js/whileyweb.js\"></script>");		
+	    writer.println("<script type=\"text/javascript\" src=\"js/whileyweb.js\"></script>");
 		writer.println("</head>");
-		
+
 	}
-	
+
 	public void writeBody(PrintWriter writer) {
 		writer.println("<div id='container'>");
-		writer.println("\t<div id='content'>");
+		writer.println("<div id='content'>");
 		writer.println(
 				"\t\t<p>From this page, you can run Whiley programs in your browser!  For more on Whiley, visit <a href='http://whiley.org'>whiley.org</a>.</p>");
-		writer.println("\t\t<div id='code'>// Write your Whiley program here</div>");
+		writer.println("<div id='codeview'>");
+		writer.println("<div id='code'>// Write your Whiley program here</div>");
+		writer.println("<textarea id='output'>// JavaScript output goes here</textarea>");
+		writer.println("</div>");
 		writer.println("\t\t\t<section id='toolbar'>");
 		writer.println(
 				"\t\t\t<button type='button' onClick='save();' title='Create a permalink of this program to share with others.'>Share</button>");

@@ -83,6 +83,7 @@ function clearErrors() {
  * Compile a given snippet of Whiley code.
  */
 function compile() {
+    var output = document.getElementById("output");
     var console = document.getElementById("console");
     var verify = document.getElementById("verification");
     var request = { code: editor.getValue(), verify: verify.checked };
@@ -97,6 +98,7 @@ function compile() {
         if(response.result == "success") {
             clearErrors(true);
             addMessage("success", "Compiled successfully.");
+	    output.value = response.js;
         } else if(response.result == "errors") {
             var errors = response.errors;
             showErrors(errors);

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +35,8 @@ import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
+import wyjs.core.JavaScriptFile;
+import wyjs.tasks.JavaScriptCompileTask;
 import wytp.provers.AutomatedTheoremProver;
 import wybs.lang.Attribute;
 
@@ -77,11 +80,12 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 	}
 
 	private String compile(String code, boolean verification) throws IOException, HttpException {
+		Path.ID mainID = Trie.ROOT.append("main");
 		Content.Registry registry = new Activator.Registry();
 		VirtualRoot root = new VirtualRoot(registry);
 		// Configure root for standard library
 		JarFileRoot stdlib = new JarFileRoot(WYRT_LIB,registry);
-		Path.Entry<WhileyFile> srcFile = root.create(Trie.ROOT.append("main"), WhileyFile.ContentType);
+		Path.Entry<WhileyFile> srcFile = root.create(mainID, WhileyFile.ContentType);
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
 		// Create registry and initialise root with the source file
@@ -90,6 +94,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		roots.add(stdlib);
 		StdProject project = new StdProject(roots);
 		addWhiley2WyilBuildRule(root,project);
+		addWyil2JavaScriptBuildRule(root,project);
 		if(verification) {
 			addVerificationBuildRules(root,project);
 		}
@@ -99,7 +104,9 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		entries.add(srcFile);
 		try {
 			project.build(entries);
+			Path.Entry<JavaScriptFile> file = project.get(mainID,JavaScriptFile.ContentType);
 			result.put("result", "success");
+			result.put("js", extractJavaScript(file));
 		} catch (SyntaxError e) {
 			Attribute.Source src = e.getElement().attribute(Attribute.Source.class);
 			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), src.start, src.end);
@@ -126,6 +133,15 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		CompileTask wyilBuilder = new CompileTask(project);
 		//wyilBuilder.setLogger(logger);
 		project.add(new StdBuildRule(wyilBuilder, root, whileyIncludes, whileyExcludes, root));
+	}
+
+	protected void addWyil2JavaScriptBuildRule(Path.Root root, StdProject project) {
+		// Configure build rules for normal compilation
+		Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+		Content.Filter<WyilFile> wyilExcludes = null;
+		// Rule for compiling Whiley to WyIL
+		JavaScriptCompileTask jsBuilder = new JavaScriptCompileTask(project);
+		project.add(new StdBuildRule(jsBuilder, root, wyilIncludes, wyilExcludes, root));
 	}
 
 	/**
@@ -162,6 +178,11 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		args.put("context", Collections.EMPTY_LIST);
 		l.add(args);
 		return l;
+	}
+
+	private static String extractJavaScript(Path.Entry<JavaScriptFile> file) throws IOException {
+		JavaScriptFile jsf = file.read();
+		return jsf.toString();
 	}
 
 	/**

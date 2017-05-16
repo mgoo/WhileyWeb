@@ -71,9 +71,20 @@ body {
     border-bottom: 1px solid #ccc;
 }
 
+#codeview {
+    display: flex;
+}
+
 #code {
     border: 1px solid #ddd;
     height: 300px;
+    flex: 0 0 65%;
+}
+
+#output {
+    border: 1px solid #ddd;
+    height: 300px;
+    flex: 1;
 }
 
 #console {
