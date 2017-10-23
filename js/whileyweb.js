@@ -18,12 +18,7 @@ function addMessage(message_class, message_text, callback) {
     message.addClass("message");
     message.addClass(message_class);
     message.appendTo("#messages");
-    message.fadeIn(200).delay(2000).slideUp(200, function() {
-        message.remove();
-        if (callback !== undefined) {
-            callback();
-        }
-    });
+    message.slideDown();
 }
 
 /**
@@ -104,9 +99,9 @@ function compile() {
     var counterexamples = document.getElementById("counterexamples");
     // Construct request
     var request = {
-	code: editor.getValue(),
-	verify: verify.checked,
-	counterexamples: counterexamples.checked
+        code: editor.getValue(),
+        verify: verify.checked,
+        counterexamples: counterexamples.checked
     };
     // Attempt to stash the current state
     store(request);
@@ -117,27 +112,29 @@ function compile() {
         $("#spinner").hide();
         var response = $.parseJSON(response);
         if(response.result == "success") {
-	    // Store generated JavaScript in binary area
-	    binArea.value = response.js;
-	    // Enable run button
-	    enableRunButton(true);
-	    // Clear all error markers
+            // Store generated JavaScript in binary area
+            binArea.value = response.js;
+            // Enable run button
+             enableRunButton(true);
+             // Clear all error markers
             clearErrors(true);
-	    // Show green success message
+            // Show green success message
             addMessage("success", "Compiled successfully!");
         } else if(response.result == "errors") {
             var errors = response.errors;
-	    // Clear any generated JavaScript from binary area
-	    binArea.value = "";
-	    // Disable run button
-	    enableRunButton(false);
-	    // Display error message markers
+            // Clear any generated JavaScript from binary area
+            binArea.value = "";
+            // Disable run button
+            enableRunButton(false);
+            // Display error message markers
             showErrors(errors);
-	    // Show error message itself
-            addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
+            // Show error message itself
+            errors.forEach(function (error) {
+              addMessage("error", "Compilation failed: " + error.text.replace("\\n","\n"));
+            });
         } else if(response.result == "exception") {
-	    addMessage("error", "Internal failure: " + response.text);
-	}
+            addMessage("error", "Internal failure: " + response.text);
+        }
     });
     $("#spinner").show();
 }
@@ -245,21 +242,24 @@ $(document).ready(function() {
     editor.setOptions({
         enableBasicAutocompletion: true
     });
+    editor.on("input", function() {
+        clearErrors();
+        clearMessages();
+    });
 
-  var staticWordCompleter = {
-    getCompletions: function(editor, session, pos, prefix, callback) {
-      var wordList = require("ace/mode/whiley").keywords;
-      callback(null, wordList.map(function(word) {
-        return {
-          caption: word,
-          value: word,
-          meta: "static"
-        };
-      }));
-
-    }
-  };
-  editor.completers = [staticWordCompleter];
+    var staticWordCompleter = {
+        getCompletions: function(editor, session, pos, prefix, callback) {
+            var wordList = require("ace/mode/whiley").keywords;
+            callback(null, wordList.map(function(word) {
+                return {
+                    caption: word,
+                    value: word,
+                    meta: "static"
+                };
+            }));
+        }
+    };
+    editor.completers = [staticWordCompleter];
 
     $("#code").resizable({
         resize: function() {
@@ -272,7 +272,7 @@ $(document).ready(function() {
     // Disable run button
     enableRunButton(false);
     // Hide Console and JavaScript areas
-    showConsole(false);    
+    showConsole(false);
     showJavaScript(false);
     // Attempt to restore from previous state
     var previousState = restore("Write code here...");
