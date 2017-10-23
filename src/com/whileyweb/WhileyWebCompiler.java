@@ -128,7 +128,11 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			String counterexample = null;
 			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
 				WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
-				counterexample = findCounterexample(assertion,project);
+				try {
+					counterexample = findCounterexample(assertion, project);
+				} catch (Exception counterExampleException) {
+					counterexample = "Unable to Find counter example";
+				}
 			}
 			result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
 		} catch (Exception e) {
